@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=proxy_manager
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:///proxies.db
+    volumes:
+      - ./data:/app/data

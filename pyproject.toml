@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "proxy-manager"
+version = "0.1.0"
+description = ""
+authors = ["zaidejaz <zaidejaz521@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^2.3.0"
+flask-sqlalchemy = "^3.0.0"
+flask-migrate = "^4.0.0"
+flask-login = "^0.6.0"
+requests = "^2.28.0"
+python-dotenv = "^1.0.0"
+flask-wtf = "^1.1.0"
+bcrypt = "^4.0.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.3.0"
+black = "^23.0.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

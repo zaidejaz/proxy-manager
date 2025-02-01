@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Proxy List</h2>
+
+<div class="mb-3">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProxyModal">
+        Add Proxy
+    </button>
+    <button class="btn btn-danger" id="deleteSelected">Delete Selected</button>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="selectAll"></th>
+            <th>IP</th>
+            <th>Port</th>
+            <th>Username</th>
+            <th>Status</th>
+            <th>Success/Failure</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for proxy in proxies %}
+        <tr>
+            <td><input type="checkbox" class="proxy-select" value="{{ proxy.id }}"></td>
+            <td>{{ proxy.ip }}</td>
+            <td>{{ proxy.port }}</td>
+            <td>{{ proxy.username }}</td>
+            <td>{{ "Active" if proxy.is_active else "Inactive" }}</td>
+            <td>{{ proxy.success_count }}/{{ proxy.failure_count }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning edit-proxy" data-proxy-id="{{ proxy.id }}">Edit</button>
+                <button class="btn btn-sm btn-danger delete-proxy" data-proxy-id="{{ proxy.id }}">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add Proxy Modal -->
+<div class="modal fade" id="addProxyModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Proxy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProxyForm">
+                    <div class="mb-3">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" class="form-control" name="ip" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Port</label>
+                        <input type="number" class="form-control" name="port" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Proxy</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

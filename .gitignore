@@ -1,0 +1,6 @@
+instance
+.env
+*.log
+*.pot
+*.pyc
+__pycache__
