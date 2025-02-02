@@ -15,24 +15,29 @@ jobs:
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          if_key_exists: replace # Add this line
+
+      - name: Test SSH Connection
+        run: ssh -T ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo "SSH connection successful"'
 
       - name: Deploy to Server
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           APP_DIR: proxy-manager
-          DOMAIN: ${{ secrets.DOMAIN }}
-          EMAIL: ${{ secrets.EMAIL }}
         run: |
-          # Create the deployment directory if it doesn't exist
-          ssh $SSH_USER@$SSH_HOST "mkdir -p ~/$APP_DIR"
-
-          # Copy project files to server
-          scp -r ./* $SSH_USER@$SSH_HOST:~/$APP_DIR/
-
-          # Create .env file
-          cat > .env << EOF
-          FLASK_APP=proxy_manager
+          # Debug info
+          echo "Using SSH_USER: $SSH_USER"
+          echo "Using SSH_HOST: $SSH_HOST"
+          
+          # Create the deployment directory
+          ssh -v $SSH_USER@$SSH_HOST "mkdir -p ~/$APP_DIR"
+          
+          # Copy project files
+          scp -r -v ./* $SSH_USER@$SSH_HOST:~/$APP_DIR/
+          
+          # Create and copy .env file
+          echo "FLASK_APP=proxy_manager
           FLASK_ENV=production
           DATABASE_URL=sqlite:///proxies.db
           SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -41,15 +46,9 @@ jobs:
           API_KEY=${{ secrets.API_KEY }}
           WEBSHARE_API_KEY=${{ secrets.WEBSHARE_API_KEY }}
           DOMAIN=${{ secrets.DOMAIN }}
-          EMAIL=${{ secrets.EMAIL }}
-          EOF
-
-          # Copy .env file
-          scp .env $SSH_USER@$SSH_HOST:~/$APP_DIR/.env
-
-          # Make setup script executable and run deployment
-          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && \
-            chmod +x setup.sh && \
-            ./setup.sh && \
-            docker-compose down && \
-            docker-compose up -d --build"
+          EMAIL=${{ secrets.EMAIL }}" > .env.prod
+          
+          scp -v .env.prod $SSH_USER@$SSH_HOST:~/$APP_DIR/.env
+          
+          # Deploy
+          ssh -v $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && docker-compose down && docker-compose up -d --build"
