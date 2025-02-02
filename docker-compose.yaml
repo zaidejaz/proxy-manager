@@ -3,11 +3,49 @@ version: '3.8'
 services:
   web:
     build: .
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     environment:
       - FLASK_APP=proxy_manager
       - FLASK_ENV=production
       - DATABASE_URL=sqlite:///proxies.db
+      - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - API_KEY=${API_KEY}
+      - WEBSHARE_API_KEY=${WEBSHARE_API_KEY}
     volumes:
       - ./data:/app/data
+    restart: always
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    environment:
+      - DOMAIN=${DOMAIN}
+    depends_on:
+      - web
+    restart: always
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - nginx
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  app-network:
+    driver: bridge

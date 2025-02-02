@@ -6,6 +6,7 @@ from proxy_manager.models.proxy import Proxy
 from proxy_manager.services.proxy_service import ProxyService
 from proxy_manager.ui.forms import LoginForm, ProxyForm
 from proxy_manager import db
+from proxy_manager.services.webshare_service import WebshareService
 
 ui = Blueprint('ui', __name__)
 
@@ -78,26 +79,28 @@ def toggle_proxy(proxy_id):
     flash(f'Proxy {"activated" if proxy.is_active else "deactivated"} successfully', 'success')
     return redirect(url_for('ui.proxies'))
 
-@ui.route('/import', methods=['GET', 'POST'])
+@ui.route('/proxies/sync', methods=['POST'])
 @login_required
-def import_proxies():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('No file uploaded', 'error')
-            return redirect(url_for('ui.import_proxies'))
-        
-        file = request.files['file']
-        if file.filename == '':
-            flash('No file selected', 'error')
-            return redirect(url_for('ui.import_proxies'))
-        
-        if not file.filename.endswith('.txt'):
-            flash('Only .txt files are allowed', 'error')
-            return redirect(url_for('ui.import_proxies'))
-        
-        content = file.read().decode('utf-8')
-        added = ProxyService.import_proxies(content)
-        flash(f'Successfully imported {added} proxies', 'success')
-        return redirect(url_for('ui.proxies'))
+def sync_proxies():
+    """Sync proxies from Webshare API"""
+    try:
+        webshare = WebshareService()
+        added = webshare.sync_proxies()
+        flash(f'Successfully added {added} new proxies', 'success')
+    except Exception as e:
+        flash(f'Failed to sync proxies: {str(e)}', 'error')
     
-    return render_template('import.html')
+    return redirect(url_for('ui.proxies'))
+
+@ui.route('/proxies/check-replace', methods=['POST'])
+@login_required
+def check_and_replace_proxies():
+    """Check and replace failing proxies"""
+    try:
+        webshare = WebshareService()
+        replaced = webshare.check_and_replace_failing_proxies()
+        flash(f'Successfully replaced {replaced} failing proxies', 'success')
+    except Exception as e:
+        flash(f'Failed to replace proxies: {str(e)}', 'error')
+    
+    return redirect(url_for('ui.proxies'))

@@ -2,7 +2,7 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ main ]  
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -20,24 +20,36 @@ jobs:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          APP_DIR: proxy-manager 
+          APP_DIR: proxy-manager
+          DOMAIN: ${{ secrets.DOMAIN }}
+          EMAIL: ${{ secrets.EMAIL }}
         run: |
           # Create the deployment directory if it doesn't exist
           ssh $SSH_USER@$SSH_HOST "mkdir -p ~/$APP_DIR"
 
           # Copy project files to server
           scp -r ./* $SSH_USER@$SSH_HOST:~/$APP_DIR/
-          
-          # Copy .env file with correct values
-          echo "FLASK_APP=proxy_manager
+
+          # Create .env file
+          cat > .env << EOF
+          FLASK_APP=proxy_manager
           FLASK_ENV=production
           DATABASE_URL=sqlite:///proxies.db
           SECRET_KEY=${{ secrets.SECRET_KEY }}
           ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-          API_KEY=${{ secrets.API_KEY }}" > .env.prod
-          
-          scp .env.prod $SSH_USER@$SSH_HOST:~/$APP_DIR/.env
+          API_KEY=${{ secrets.API_KEY }}
+          WEBSHARE_API_KEY=${{ secrets.WEBSHARE_API_KEY }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          EMAIL=${{ secrets.EMAIL }}
+          EOF
 
-          # Deploy on server
-          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && docker-compose down && docker-compose up -d --build"
+          # Copy .env file
+          scp .env $SSH_USER@$SSH_HOST:~/$APP_DIR/.env
+
+          # Make setup script executable and run deployment
+          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && \
+            chmod +x setup.sh && \
+            ./setup.sh && \
+            docker-compose down && \
+            docker-compose up -d --build"
