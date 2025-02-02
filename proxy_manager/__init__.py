@@ -40,12 +40,20 @@ def create_app():
         
         # Create admin user if it doesn't exist
         from proxy_manager.models.user import User
-        if not User.query.filter_by(username=os.getenv('ADMIN_USERNAME')).first():
-            admin = User(
-                username=os.getenv('ADMIN_USERNAME'),
-                password=os.getenv('ADMIN_PASSWORD')
-            )
-            db.session.add(admin)
-            db.session.commit()
+        admin_username = os.getenv('ADMIN_USERNAME')
+        admin_password = os.getenv('ADMIN_PASSWORD')
+        
+        if admin_username and admin_password:
+            admin = User.query.filter_by(username=admin_username).first()
+            if not admin:
+                admin = User(username=admin_username, password=admin_password)
+                db.session.add(admin)
+                db.session.commit()
+                print(f"Admin user '{admin_username}' created successfully")
+            else:
+                # Update password if it changed
+                admin.set_password(admin_password)
+                db.session.commit()
+                print(f"Admin user '{admin_username}' password updated")
     
     return app

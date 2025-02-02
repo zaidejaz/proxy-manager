@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import request, jsonify
-from werkzeug.security import check_password_hash
 import os
+from proxy_manager.models.user import User
 
 def require_auth(f):
     @wraps(f)
@@ -13,8 +13,10 @@ def require_auth(f):
     return decorated
 
 def check_auth(username, password):
-    return username == os.getenv('ADMIN_USERNAME') and \
-           check_password_hash(os.getenv('ADMIN_PASSWORD_HASH'), password)
+    user = User.query.filter_by(username=username).first()
+    if user:
+        return user.check_password(password)
+    return False
 
 def require_api_key(f):
     @wraps(f)
