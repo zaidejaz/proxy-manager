@@ -15,7 +15,7 @@ jobs:
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: replace # Add this line
+          if_key_exists: replace
 
       - name: Test SSH Connection
         run: ssh -T ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo "SSH connection successful"'
