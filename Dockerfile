@@ -3,7 +3,7 @@ WORKDIR /app
 RUN pip install poetry
 COPY poetry.lock pyproject.toml ./
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi \
+    && poetry install --without dev --no-interaction --no-ansi \
     && poetry add gunicorn
 COPY . .
 ENV FLASK_APP=proxy_manager
