@@ -4,21 +4,30 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from dotenv import load_dotenv
 import os
+import threading
 
 load_dotenv()
 
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
+init_lock = threading.Lock()
 
 def create_app():
     app = Flask(__name__, 
                 template_folder='ui/templates',
                 static_folder='ui/static')
     
+    # Ensure data directory exists
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+    os.makedirs(data_dir, exist_ok=True)
+    
+    # Database configuration with absolute path
+    database_path = os.path.join(data_dir, 'proxies.db')
+    
     # Configuration
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{database_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialize extensions
@@ -34,26 +43,25 @@ def create_app():
     from proxy_manager.ui.routes import ui
     app.register_blueprint(ui)
     
-    # Create database tables
-    with app.app_context():
-        db.create_all()
-        
-        # Create admin user if it doesn't exist
-        from proxy_manager.models.user import User
-        admin_username = os.getenv('ADMIN_USERNAME')
-        admin_password = os.getenv('ADMIN_PASSWORD')
-        
-        if admin_username and admin_password:
+    # Create database and admin user with lock
+    with init_lock:
+        with app.app_context():
+            db.create_all()
+            
+            # Create admin user
+            from proxy_manager.models.user import User
+            admin_username = os.getenv('ADMIN_USERNAME', 'admin')
+            admin_password = os.getenv('ADMIN_PASSWORD', 'changeme')
+            
             admin = User.query.filter_by(username=admin_username).first()
             if not admin:
-                admin = User(username=admin_username, password=admin_password)
-                db.session.add(admin)
-                db.session.commit()
-                print(f"Admin user '{admin_username}' created successfully")
-            else:
-                # Update password if it changed
-                admin.set_password(admin_password)
-                db.session.commit()
-                print(f"Admin user '{admin_username}' password updated")
+                try:
+                    admin = User(username=admin_username, password=admin_password)
+                    db.session.add(admin)
+                    db.session.commit()
+                    print(f"Admin user created: {admin_username}")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Error creating admin user: {str(e)}")
     
     return app
