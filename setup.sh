@@ -1,49 +1,29 @@
 #!/bin/bash
 
-# Create required directories
+# Ensure environment variables are set
+if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+    echo "Error: DOMAIN and EMAIL environment variables must be set"
+    exit 1
+fi
+
+# Create required directories if they don't exist
 mkdir -p nginx certbot/conf certbot/www data
 
-# Create Nginx configuration - note the change from 'cat >' to 'cat <<-EOF'
-cat <<-EOF > nginx/app.conf
-server {
-    listen 80;
-    listen [::]:80;
-    server_name ${DOMAIN} www.${DOMAIN};
-    
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-    
-    location / {
-        return 301 https://\$host\$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name ${DOMAIN} www.${DOMAIN};
-    
-    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers off;
-    
-    location / {
-        proxy_pass http://web:5000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
-EOF
+# Verify nginx configuration file exists
+if [ ! -f "nginx/app.conf" ]; then
+    echo "Error: nginx/app.conf file not found"
+    exit 1
+fi
 
 # Initial SSL certificate request
 if [ ! -d "certbot/conf/live/${DOMAIN}" ]; then
+    echo "Setting up initial SSL certificate for ${DOMAIN}"
+    
+    # Start nginx temporarily
     docker-compose up -d nginx
     
     # Wait for nginx to start
+    echo "Waiting for nginx to start..."
     sleep 5
     
     # Request certificate
@@ -55,7 +35,12 @@ if [ ! -d "certbot/conf/live/${DOMAIN}" ]; then
         --no-eff-email \
         -d ${DOMAIN} \
         -d www.${DOMAIN}
-        
-    # Restart nginx to load the certificates
-    docker-compose restart nginx
+    
+    # Check if certificate was obtained successfully
+    if [ ! -d "certbot/conf/live/${DOMAIN}" ]; then
+        echo "Failed to obtain SSL certificate"
+        exit 1
+    fi
 fi
+
+echo "Setup completed successfully"

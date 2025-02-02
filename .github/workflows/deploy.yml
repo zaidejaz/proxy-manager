@@ -9,34 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+      
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
           if_key_exists: replace
-
-      - name: Test SSH Connection
-        run: ssh -T ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo "SSH connection successful"'
-
-      - name: Deploy to Server
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          APP_DIR: proxy-manager
+      
+      - name: Create env file
         run: |
-          # Debug info
-          echo "Using SSH_USER: $SSH_USER"
-          echo "Using SSH_HOST: $SSH_HOST"
-          
-          # Create the deployment directory
-          ssh -v $SSH_USER@$SSH_HOST "mkdir -p ~/$APP_DIR"
-          
-          # Copy project files
-          scp -r -v ./* $SSH_USER@$SSH_HOST:~/$APP_DIR/
-          
-          # Create and copy .env file
           echo "FLASK_APP=proxy_manager
           FLASK_ENV=production
           DATABASE_URL=sqlite:///proxies.db
@@ -47,8 +29,56 @@ jobs:
           WEBSHARE_API_KEY=${{ secrets.WEBSHARE_API_KEY }}
           DOMAIN=${{ secrets.DOMAIN }}
           EMAIL=${{ secrets.EMAIL }}" > .env.prod
+      
+      - name: Deploy to Server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          APP_DIR: proxy-manager
+          DOMAIN: ${{ secrets.DOMAIN }}
+          EMAIL: ${{ secrets.EMAIL }}
+        run: |
+          # Create the deployment directory and required subdirectories
+          ssh $SSH_USER@$SSH_HOST "mkdir -p ~/$APP_DIR/nginx ~/$APP_DIR/certbot/conf ~/$APP_DIR/certbot/www ~/$APP_DIR/data"
           
-          scp -v .env.prod $SSH_USER@$SSH_HOST:~/$APP_DIR/.env
+          # Copy project files
+          scp -r ./* .env.prod $SSH_USER@$SSH_HOST:~/$APP_DIR/
           
-          # Deploy
-          ssh -v $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && docker-compose down && docker-compose up -d --build"
+          # Generate nginx config file directly on the server
+          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && DOMAIN=$DOMAIN EMAIL=$EMAIL bash -c 'cat > nginx/app.conf << EOL
+          server {
+              listen 80;
+              listen [::]:80;
+              server_name $DOMAIN www.$DOMAIN;
+              
+              location /.well-known/acme-challenge/ {
+                  root /var/www/certbot;
+              }
+              
+              location / {
+                  return 301 https://\$host\$request_uri;
+              }
+          }
+
+          server {
+              listen 443 ssl;
+              listen [::]:443 ssl;
+              server_name $DOMAIN;
+              
+              ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+              ssl_protocols TLSv1.2 TLSv1.3;
+              ssl_prefer_server_ciphers off;
+              
+              location / {
+                  proxy_pass http://web:5000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+          EOL'"
+          
+          # Make setup script executable and run setup
+          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && chmod +x setup.sh && ./setup.sh && docker-compose down && docker-compose up -d --build"
