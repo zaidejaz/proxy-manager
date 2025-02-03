@@ -17,13 +17,6 @@ jobs:
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
           if_key_exists: replace
       
-      - name: Export Secrets
-        run: |
-          echo "SSH_USER=${{ secrets.SSH_USER }}" >> $GITHUB_ENV
-          echo "SSH_HOST=${{ secrets.SSH_HOST }}" >> $GITHUB_ENV
-          echo "DOMAIN=${{ secrets.DOMAIN }}" >> $GITHUB_ENV
-          echo "EMAIL=${{ secrets.EMAIL }}" >> $GITHUB_ENV
-
       - name: Create env file
         run: |
           echo "FLASK_APP=proxy_manager
