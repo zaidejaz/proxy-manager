@@ -27,30 +27,29 @@ echo "📧 Email: $EMAIL"
 # Step 1: Update System & Install Dependencies
 echo "📦 Installing necessary packages..."
 sudo apt update
-sudo apt install -y nginx certbot python3-certbot-nginx
+sudo apt install -y nginx certbot python3-certbot-nginx python3-pip
 
-# Step 2: Check if Docker is installed and start the service
-echo "🐳 Ensuring Docker is properly set up..."
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker is not installed. Installing Docker..."
-    sudo apt install -y docker.io
-fi
+# Step 2: Install Poetry (similar to Dockerfile)
+echo "📦 Installing Poetry for dependency management..."
+curl -sSL https://install.python-poetry.org | python3 -
 
-sudo systemctl enable docker
-sudo systemctl start docker
-
-# Step 3: Stop and Remove Old Flask Container (if exists)
-echo "🛑 Stopping previous container (if exists)..."
-sudo docker stop flask-app || true
-sudo docker rm flask-app || true
-
-# Step 4: Build and Run the Flask App
-echo "🚀 Building and running the Flask app..."
+# Step 3: Install app dependencies using Poetry
+echo "📦 Installing Flask app dependencies..."
 cd "/home/$USER/proxy_manager"
-sudo docker build -t flask-app .
-sudo docker run -d --name flask-app -p 5000:5000 --env-file .env flask-app
+poetry config virtualenvs.create false  # Install in the system Python
+poetry install --without dev --no-interaction --no-ansi  # Install dependencies
 
-# Step 5: Configure NGINX Dynamically
+# Step 4: Install Gunicorn and Gevent (required for concurrency)
+echo "📦 Installing Gunicorn and Gevent..."
+poetry add gunicorn gevent
+
+# Step 5: Run Flask App using Gunicorn (with Gevent workers)
+echo "🚀 Starting Flask app using Gunicorn..."
+nohup poetry run gunicorn --workers=6 --worker-class=gevent --worker-connections=1000 \
+  --max-requests=10000 --max-requests-jitter=1000 --backlog=2048 --bind 127.0.0.1:5000 \
+  --timeout=30 proxy_manager:create_app() &
+
+# Step 6: Configure NGINX Dynamically
 echo "🔧 Configuring NGINX..."
 sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 
@@ -89,19 +88,19 @@ echo "✅ Enabling NGINX configuration..."
 sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/
 sudo systemctl restart nginx || sudo systemctl start nginx
 
-# Step 6: Install SSL with Certbot
+# Step 7: Install SSL with Certbot
 echo "🔐 Setting up SSL with Certbot..."
 if ! sudo certbot --nginx -d "$DOMAIN" --email "$EMAIL" --non-interactive --agree-tos; then
     echo "❌ ERROR: Certbot failed to obtain SSL certificates."
     exit 1
 fi
 
-# Step 7: Verify SSL and Restart NGINX
+# Step 8: Verify SSL and Restart NGINX
 echo "✅ SSL Certificates obtained. Restarting NGINX..."
 sudo nginx -t
 sudo systemctl restart nginx
 
-# Step 8: Auto-renew SSL
+# Step 9: Auto-renew SSL
 echo "⏳ Setting up SSL auto-renew..."
 echo "0 0 * * * certbot renew --quiet" | sudo tee -a /etc/crontab
 
