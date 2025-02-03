@@ -19,7 +19,8 @@ jobs:
       
       - name: Create env file
         run: |
-          echo "FLASK_APP=proxy_manager
+          cat <<EOF > .env.prod
+          FLASK_APP=proxy_manager
           FLASK_ENV=production
           DATABASE_URL=sqlite:///proxies.db
           SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -28,7 +29,8 @@ jobs:
           API_KEY=${{ secrets.API_KEY }}
           WEBSHARE_API_KEY=${{ secrets.WEBSHARE_API_KEY }}
           DOMAIN=${{ secrets.DOMAIN }}
-          EMAIL=${{ secrets.EMAIL }}" > .env.prod
+          EMAIL=${{ secrets.EMAIL }}
+          EOF
       
       - name: Deploy to Server
         env:
@@ -45,40 +47,8 @@ jobs:
           scp -r ./* .env.prod $SSH_USER@$SSH_HOST:~/$APP_DIR/
           
           # Generate nginx config file directly on the server
-          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && DOMAIN=$DOMAIN EMAIL=$EMAIL bash -c 'cat > nginx/app.conf << EOL
-          server {
-              listen 80;
-              listen [::]:80;
-              server_name $DOMAIN www.$DOMAIN;
-              
-              location /.well-known/acme-challenge/ {
-                  root /var/www/certbot;
-              }
-              
-              location / {
-                  return 301 https://\$host\$request_uri;
-              }
-          }
+          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR/nginx && DOMAIN=$DOMAIN envsubst '\$DOMAIN' < app.template.conf > app.conf"
 
-          server {
-              listen 443 ssl;
-              listen [::]:443 ssl;
-              server_name $DOMAIN;
-              
-              ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-              ssl_protocols TLSv1.2 TLSv1.3;
-              ssl_prefer_server_ciphers off;
-              
-              location / {
-                  proxy_pass http://web:5000;
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-              }
-          }
-          EOL'"
           
           # Make setup script executable and run setup
           ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && chmod +x setup.sh && ./setup.sh && docker-compose down && docker-compose up -d --build"
