@@ -15,7 +15,7 @@ set -a
 source "/home/$USER/proxy_manager/.env"
 set +a
 
-# Ensure DOMAIN and EMAIL are set in .env
+#Ensure DOMAIN and EMAIL are set in .env
 if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
     echo "❌ ERROR: DOMAIN or EMAIL not set in .env file. Please provide valid values."
     exit 1
@@ -31,13 +31,12 @@ sudo apt install -y nginx certbot python3-certbot-nginx python3-pip
 
 # Step 2: Install Poetry (similar to Dockerfile)
 echo "📦 Installing Poetry for dependency management..."
-curl -sSL https://install.python-poetry.org | python3 -
+sudo apt install python3-poetry
 
 # Step 3: Install app dependencies using Poetry
 echo "📦 Installing Flask app dependencies..."
 cd "/home/$USER/proxy_manager"
-poetry config virtualenvs.create false  # Install in the system Python
-poetry install --without dev --no-interaction --no-ansi  # Install dependencies
+poetry install
 
 # Step 4: Install Gunicorn and Gevent (required for concurrency)
 echo "📦 Installing Gunicorn and Gevent..."
@@ -47,7 +46,7 @@ poetry add gunicorn gevent
 echo "🚀 Starting Flask app using Gunicorn..."
 nohup poetry run gunicorn --workers=6 --worker-class=gevent --worker-connections=1000 \
   --max-requests=10000 --max-requests-jitter=1000 --backlog=2048 --bind 127.0.0.1:5000 \
-  --timeout=30 proxy_manager:create_app() &
+  --timeout=30 "proxy_manager:create_app()"
 
 # Step 6: Configure NGINX Dynamically
 echo "🔧 Configuring NGINX..."
