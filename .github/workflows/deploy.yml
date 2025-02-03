@@ -16,6 +16,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
           if_key_exists: replace
+
+      - name: Export Secrets
+        run: |
+          echo "SSH_USER=${{ secrets.SSH_USER }}" >> $GITHUB_ENV
+          echo "SSH_HOST=${{ secrets.SSH_HOST }}" >> $GITHUB_ENV
+          echo "DOMAIN=${{ secrets.DOMAIN }}" >> $GITHUB_ENV
+          echo "EMAIL=${{ secrets.EMAIL }}" >> $GITHUB_ENV
       
       - name: Create env file
         run: |
@@ -33,22 +40,26 @@ jobs:
           EOF
       
       - name: Deploy to Server
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          APP_DIR: proxy-manager
-          DOMAIN: ${{ secrets.DOMAIN }}
-          EMAIL: ${{ secrets.EMAIL }}
         run: |
           # Create the deployment directory and required subdirectories
           ssh $SSH_USER@$SSH_HOST "mkdir -p ~/$APP_DIR/nginx ~/$APP_DIR/certbot/conf ~/$APP_DIR/certbot/www ~/$APP_DIR/data"
-          
+
           # Copy project files
           scp -r ./* .env.prod $SSH_USER@$SSH_HOST:~/$APP_DIR/
-          
-          # Generate nginx config file directly on the server
-          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR/nginx && DOMAIN=$DOMAIN envsubst '\$DOMAIN' < app.template.conf > app.conf"
 
-          
+          # Generate nginx config file on the server
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          export DOMAIN="${DOMAIN}"
+          export EMAIL="${EMAIL}"
+          cd ~/$APP_DIR/nginx
+          envsubst '\$DOMAIN' < app.template.conf > app.conf
+          EOF
+
           # Make setup script executable and run setup
-          ssh $SSH_USER@$SSH_HOST "cd ~/$APP_DIR && chmod +x setup.sh && ./setup.sh && docker-compose down && docker-compose up -d --build"
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cd ~/$APP_DIR
+          chmod +x setup.sh
+          ./setup.sh
+          docker-compose down
+          docker-compose up -d --build
+          EOF
