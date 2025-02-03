@@ -5,14 +5,14 @@ set -e  # Exit on error
 echo "🔧 Deploying Flask App..."
 
 # Ensure .env exists
-if [ ! -f "/home/$USER/flask_app/.env" ]; then
+if [ ! -f "/home/$USER/proxy_manager/.env" ]; then
     echo "❌ ERROR: .env file is missing. Create it and rerun the script."
     exit 1
 fi
 
 # Load environment variables from .env
 set -a
-source "/home/$USER/flask_app/.env"
+source "/home/$USER/proxy_manager/.env"
 set +a
 
 # Ensure DOMAIN and EMAIL are set in .env
@@ -46,7 +46,7 @@ sudo docker rm flask-app || true
 
 # Step 4: Build and Run the Flask App
 echo "🚀 Building and running the Flask app..."
-cd "/home/$USER/flask_app"
+cd "/home/$USER/proxy_manager"
 sudo docker build -t flask-app .
 sudo docker run -d --name flask-app -p 5000:5000 --env-file .env flask-app
 
@@ -54,7 +54,7 @@ sudo docker run -d --name flask-app -p 5000:5000 --env-file .env flask-app
 echo "🔧 Configuring NGINX..."
 sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 
-NGINX_CONF="/etc/nginx/sites-available/flask_app"
+NGINX_CONF="/etc/nginx/sites-available/proxy_manager"
 sudo tee "$NGINX_CONF" > /dev/null <<EOF
 server {
     listen 80;
