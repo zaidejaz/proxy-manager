@@ -20,14 +20,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "/home/${{ secrets.SSH_USER }}/flask_app"
+          target: "/home/${{ secrets.SSH_USER }}/proxy_manager"
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            chmod +x /home/${{ secrets.SSH_USER }}/flask_app/deploy.sh
-            /home/${{ secrets.SSH_USER }}/flask_app/deploy.sh
+
