@@ -5,8 +5,15 @@ services:
     build: .
     expose:
       - "5000"
-    env_file:
-      - .env.prod
+    environment:
+      - FLASK_APP=proxy_manager
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:///proxies.db
+      - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - API_KEY=${API_KEY}
+      - WEBSHARE_API_KEY=${WEBSHARE_API_KEY}
     volumes:
       - ./data:/app/data
     restart: always
