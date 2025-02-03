@@ -20,8 +20,8 @@ echo "📧 Email: $EMAIL"
 
 # Step 1: Update System & Install Dependencies
 echo "📦 Installing necessary packages..."
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y docker.io nginx certbot python3-certbot-nginx
+sudo apt update
+sudo apt install -y nginx certbot python3-certbot-nginx
 
 # Step 2: Fix Potential Docker Issues
 echo "🐳 Ensuring Docker is properly set up..."
