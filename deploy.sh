@@ -15,6 +15,12 @@ set -a
 source "/home/$USER/flask_app/.env"
 set +a
 
+# Ensure DOMAIN and EMAIL are set in .env
+if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+    echo "❌ ERROR: DOMAIN or EMAIL not set in .env file. Please provide valid values."
+    exit 1
+fi
+
 echo "🌍 Domain: $DOMAIN"
 echo "📧 Email: $EMAIL"
 
@@ -23,12 +29,17 @@ echo "📦 Installing necessary packages..."
 sudo apt update
 sudo apt install -y nginx certbot python3-certbot-nginx
 
-# Step 2: Fix Potential Docker Issues
+# Step 2: Check if Docker is installed and start the service
 echo "🐳 Ensuring Docker is properly set up..."
+if ! command -v docker &> /dev/null; then
+    echo "❌ Docker is not installed. Installing Docker..."
+    sudo apt install -y docker.io
+fi
+
 sudo systemctl enable docker
 sudo systemctl start docker
 
-# Step 3: Stop and Remove Old Flask Container
+# Step 3: Stop and Remove Old Flask Container (if exists)
 echo "🛑 Stopping previous container (if exists)..."
 sudo docker stop flask-app || true
 sudo docker rm flask-app || true
@@ -80,9 +91,17 @@ sudo systemctl restart nginx || sudo systemctl start nginx
 
 # Step 6: Install SSL with Certbot
 echo "🔐 Setting up SSL with Certbot..."
-sudo certbot --nginx -d "$DOMAIN" --email "$EMAIL" --non-interactive --agree-tos
+if ! sudo certbot --nginx -d "$DOMAIN" --email "$EMAIL" --non-interactive --agree-tos; then
+    echo "❌ ERROR: Certbot failed to obtain SSL certificates."
+    exit 1
+fi
 
-# Step 7: Auto-renew SSL
+# Step 7: Verify SSL and Restart NGINX
+echo "✅ SSL Certificates obtained. Restarting NGINX..."
+sudo nginx -t
+sudo systemctl restart nginx
+
+# Step 8: Auto-renew SSL
 echo "⏳ Setting up SSL auto-renew..."
 echo "0 0 * * * certbot renew --quiet" | sudo tee -a /etc/crontab
 
