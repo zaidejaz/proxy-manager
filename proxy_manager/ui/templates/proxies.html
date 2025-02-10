@@ -1,51 +1,125 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h2>Proxy List</h2>
 
-<div class="mb-3">
-    <form action="{{ url_for('ui.sync_proxies') }}" method="post" class="d-inline">
-        <button type="submit" class="btn btn-primary">Sync Proxies from Webshare</button>
-    </form>
+<!-- Buttons and Forms Section -->
+<div class="mb-4">
+    <!-- Manual Add Form -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProxyModal">
+        Add Proxy
+    </button>
     
-    <form action="{{ url_for('ui.check_and_replace_proxies') }}" method="post" class="d-inline">
-        <button type="submit" class="btn btn-warning">Replace Failing Proxies</button>
-    </form>
+    <!-- Bulk Import Form -->
+    <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#importModal">
+        Bulk Import
+    </button>
+    
+    <!-- Bulk Delete Button - Note: removed style="display: none" -->
+    <button id="deleteSelected" class="btn btn-danger ms-2" disabled>
+        Delete Selected (<span id="selectedCount">0</span>)
+    </button>
 </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Webshare ID</th>
-            <th>IP</th>
-            <th>Port</th>
-            <th>Username</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Success/Failure</th>
-            <th>Failure Rate</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for proxy in proxies %}
-        <tr class="{{ 'table-danger' if proxy.failure_rate > 50 else '' }}">
-            <td>{{ proxy.webshare_id }}</td>
-            <td>{{ proxy.ip }}</td>
-            <td>{{ proxy.port }}</td>
-            <td>{{ proxy.username }}</td>
-            <td>{{ proxy.city_name }}, {{ proxy.country_code }}</td>
-            <td>{{ "Active" if proxy.is_active else "Inactive" }}</td>
-            <td>{{ proxy.success_count }}/{{ proxy.failure_count }}</td>
-            <td>{{ "%.1f"|format(proxy.failure_rate) }}%</td>
-            <td>
-                <button class="btn btn-sm btn-warning edit-proxy" 
-                        data-proxy-id="{{ proxy.id }}">Edit</button>
-                <button class="btn btn-sm btn-danger delete-proxy" 
-                        data-proxy-id="{{ proxy.id }}">Delete</button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<!-- Proxies Table -->
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 40px;">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="selectAll">
+                    </div>
+                </th>
+                <th>IP</th>
+                <th>Port</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Status</th>
+                <th>Success/Failure</th>
+                <th>Failure Rate</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proxy in proxies %}
+            <tr class="{{ 'table-danger' if proxy.failure_rate > 50 else '' }}">
+                <td class="text-center">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input proxy-select" value="{{ proxy.id }}">
+                    </div>
+                </td>
+                <td>{{ proxy.ip }}</td>
+                <td>{{ proxy.port }}</td>
+                <td>{{ proxy.username }}</td>
+                <td>{{ proxy.password }}</td>
+                <td>{{ "Active" if proxy.is_active else "Inactive" }}</td>
+                <td>{{ proxy.success_count }}/{{ proxy.failure_count }}</td>
+                <td>{{ "%.1f"|format(proxy.failure_rate) }}%</td>
+                <td>
+                    <button class="btn btn-sm btn-danger delete-proxy" data-proxy-id="{{ proxy.id }}">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Add Proxy Modal -->
+<div class="modal fade" id="addProxyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Proxy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProxyForm" method="POST" action="{{ url_for('ui.add_proxy') }}">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" name="ip" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Port</label>
+                        <input type="number" name="port" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="text" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Proxy</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Proxies</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" method="POST" action="{{ url_for('ui.import_proxies') }}" enctype="multipart/form-data">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        <label class="form-label">Upload Proxy List (TXT)</label>
+                        <input type="file" name="file" class="form-control" accept=".txt" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

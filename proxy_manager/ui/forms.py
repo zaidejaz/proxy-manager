@@ -12,4 +12,3 @@ class ProxyForm(FlaskForm):
     port = IntegerField('Port', validators=[DataRequired(), NumberRange(min=1, max=65535)])
     username = StringField('Username', validators=[DataRequired()])
     password = StringField('Password', validators=[DataRequired()])
-    submit = SubmitField('Submit')

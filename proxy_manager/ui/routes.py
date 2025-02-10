@@ -1,12 +1,11 @@
 # proxy_manager/ui/routes.py
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from proxy_manager.models.user import User
 from proxy_manager.models.proxy import Proxy
 from proxy_manager.services.proxy_service import ProxyService
 from proxy_manager.ui.forms import LoginForm, ProxyForm
 from proxy_manager import db
-from proxy_manager.services.webshare_service import WebshareService
 
 ui = Blueprint('ui', __name__)
 
@@ -71,37 +70,44 @@ def delete_proxy(proxy_id):
     flash('Proxy deleted successfully', 'success')
     return redirect(url_for('ui.proxies'))
 
-@ui.route('/proxies/<int:proxy_id>/toggle', methods=['POST'])
+@ui.route('/proxies/import', methods=['POST'])
 @login_required
-def toggle_proxy(proxy_id):
-    proxy = Proxy.query.get_or_404(proxy_id)
-    proxy.is_active = not proxy.is_active
-    db.session.commit()
-    flash(f'Proxy {"activated" if proxy.is_active else "deactivated"} successfully', 'success')
-    return redirect(url_for('ui.proxies'))
-
-@ui.route('/proxies/sync', methods=['POST'])
-@login_required
-def sync_proxies():
-    """Sync proxies from Webshare API"""
+def import_proxies():
+    if 'file' not in request.files:
+        flash('No file uploaded', 'error')
+        return redirect(url_for('ui.proxies'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('No file selected', 'error')
+        return redirect(url_for('ui.proxies'))
+    
     try:
-        webshare = WebshareService()
-        added = webshare.sync_proxies()
-        flash(f'Successfully added {added} new proxies', 'success')
+        content = file.read().decode('utf-8')
+        added = ProxyService.import_proxies(content)
+        flash(f'Successfully imported {added} proxies', 'success')
     except Exception as e:
-        flash(f'Failed to sync proxies: {str(e)}', 'error')
+        flash(f'Error importing proxies: {str(e)}', 'error')
     
     return redirect(url_for('ui.proxies'))
 
-@ui.route('/proxies/check-replace', methods=['POST'])
+@ui.route('/proxies/bulk-delete', methods=['POST'])
 @login_required
-def check_and_replace_proxies():
-    """Check and replace failing proxies"""
+def bulk_delete_proxies():
     try:
-        webshare = WebshareService()
-        replaced = webshare.check_and_replace_failing_proxies()
-        flash(f'Successfully replaced {replaced} failing proxies', 'success')
+        data = request.get_json()
+        proxy_ids = data.get('proxy_ids', [])
+        
+        deleted = Proxy.query.filter(Proxy.id.in_(proxy_ids)).delete(synchronize_session=False)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully deleted {deleted} proxies'
+        })
     except Exception as e:
-        flash(f'Failed to replace proxies: {str(e)}', 'error')
-    
-    return redirect(url_for('ui.proxies'))
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
