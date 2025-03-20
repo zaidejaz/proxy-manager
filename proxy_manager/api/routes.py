@@ -13,6 +13,27 @@ def get_proxy():
     
     return jsonify(proxy.to_dict())
 
+@api.route('/proxies', methods=['GET'])
+@require_api_key
+def list_proxies():
+    """
+    Get a list of all active proxies.
+    
+    Returns:
+        JSON response with a list of proxies
+    """
+    active_proxies = ProxyService.get_proxies()
+    
+    if not active_proxies:
+        return jsonify({"error": "No proxies available"}), 404
+    
+    proxies_list = [proxy.to_dict() for proxy in active_proxies]
+    
+    return jsonify({
+        "count": len(proxies_list),
+        "proxies": proxies_list
+    })
+
 @api.route('/proxy/import', methods=['POST'])
 @require_auth
 def import_proxies():

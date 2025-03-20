@@ -50,6 +50,15 @@ class ProxyService:
         return proxy
 
     @staticmethod
+    def get_proxies():
+        active_proxies = Proxy.query.filter_by(is_active=True).all()
+        if not active_proxies:
+            return None
+        db.session.commit()
+        
+        return active_proxies
+
+    @staticmethod
     def update_proxy_status(proxy_id, success):
         proxy = Proxy.query.get(proxy_id)
         if proxy:
