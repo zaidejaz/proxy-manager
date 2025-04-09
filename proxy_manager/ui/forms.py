@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, SelectField
 from wtforms.validators import DataRequired, NumberRange
 
 class LoginForm(FlaskForm):
@@ -12,3 +12,7 @@ class ProxyForm(FlaskForm):
     port = IntegerField('Port', validators=[DataRequired(), NumberRange(min=1, max=65535)])
     username = StringField('Username', validators=[DataRequired()])
     password = StringField('Password', validators=[DataRequired()])
+    proxy_type = SelectField('Proxy Type', choices=[
+        ('datacenter', 'Datacenter'),
+        ('residential', 'Residential')
+    ], default='datacenter')

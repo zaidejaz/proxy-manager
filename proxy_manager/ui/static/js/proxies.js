@@ -11,16 +11,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper function to show flash messages
     const showFlashMessage = (message, type = 'success') => {
         const flashMessage = document.createElement('div');
-        flashMessage.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-        flashMessage.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
+        flashMessage.className = `alert rounded-md p-4 mb-3 ${type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} transition-opacity duration-500`;
+        flashMessage.textContent = message;
 
-        const container = document.querySelector('.container.mt-4');
+        // Find the container to insert the flash message
+        const container = document.querySelector('.px-6.py-3');
         if (container) {
-            container.insertAdjacentElement('afterbegin', flashMessage);
-            setTimeout(() => flashMessage.remove(), 3000);
+            container.insertAdjacentElement('beforeend', flashMessage);
+            setTimeout(() => {
+                flashMessage.style.opacity = '0';
+                setTimeout(() => flashMessage.remove(), 500);
+            }, 3000);
         }
     };
 
@@ -46,38 +47,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Initialize modal functionality
-    const addProxyModal = document.getElementById('addProxyModal');
-    const importModal = document.getElementById('importModal');
-    if (addProxyModal) {
-        new bootstrap.Modal(addProxyModal);
-    }
-    if (importModal) {
-        new bootstrap.Modal(importModal);
-    }
-
     // Handle form submissions
-    const addProxyForm = document.getElementById('addProxyForm');
-    if (addProxyForm) {
-        addProxyForm.addEventListener('submit', function(e) {
-            if (!addProxyForm.checkValidity()) {
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
                 e.preventDefault();
                 e.stopPropagation();
             }
-            addProxyForm.classList.add('was-validated');
+            form.classList.add('was-validated');
         });
-    }
-
-    const importForm = document.getElementById('importForm');
-    if (importForm) {
-        importForm.addEventListener('submit', function(e) {
-            if (!importForm.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            importForm.classList.add('was-validated');
-        });
-    }
+    });
 
     // Select all checkbox functionality
     if (selectAllCheckbox) {
@@ -102,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .map(checkbox => checkbox.value);
 
             if (selectedProxies.length === 0) {
-                showFlashMessage('Please select proxies to delete', 'warning');
+                showFlashMessage('Please select proxies to delete', 'danger');
                 return;
             }
 

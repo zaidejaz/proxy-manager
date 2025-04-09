@@ -1,30 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-gray-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">  <!-- Add this line -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Proxy Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap">
+    <!-- Alpine JS -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom shadcn-inspired styles */
+        .btn-primary {
+            @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm;
+        }
+        .btn-success {
+            @apply bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-md shadow-sm;
+        }
+        .btn-info {
+            @apply bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-4 rounded-md shadow-sm;
+        }
+        .btn-danger {
+            @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md shadow-sm;
+        }
+        .btn-outline-primary {
+            @apply border border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-medium py-2 px-4 rounded-md;
+        }
+        .btn-outline-primary.active {
+            @apply bg-indigo-600 text-white;
+        }
+        .form-control {
+            @apply block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm;
+        }
+        .form-select {
+            @apply block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm;
+        }
+        table {
+            @apply min-w-full divide-y divide-gray-300;
+        }
+        thead {
+            @apply bg-gray-50;
+        }
+        th {
+            @apply py-3.5 px-4 text-left text-sm font-semibold text-gray-900;
+        }
+        tbody {
+            @apply divide-y divide-gray-200 bg-white;
+        }
+        td {
+            @apply whitespace-nowrap py-4 px-4 text-sm text-gray-500;
+        }
+        .table-danger {
+            @apply bg-red-50;
+        }
+        .modal-content {
+            @apply bg-white rounded-lg shadow-xl overflow-hidden;
+        }
+        .modal-header {
+            @apply px-6 py-4 border-b border-gray-200;
+        }
+        .modal-body {
+            @apply p-6;
+        }
+        .mb-3 {
+            @apply mb-4;
+        }
+        .form-label {
+            @apply block text-sm font-medium leading-6 text-gray-900 mb-2;
+        }
+    </style>
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">Proxy Manager</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/proxies">Proxies</a>
-                    </li>
-                </ul>
+<body class="h-full">
+    <div class="min-h-full">
+        <nav class="bg-white shadow-sm">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between">
+                    <div class="flex">
+                        <div class="flex flex-shrink-0 items-center">
+                            <a href="/" class="text-xl font-bold text-indigo-600">Proxy Manager</a>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/proxies" class="inline-flex items-center border-b-2 border-indigo-500 px-1 pt-1 text-sm font-medium text-gray-900">Proxies</a>
+                        </div>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                    <div class="flex items-center">
+                        <a href="{{ url_for('ui.logout') }}" class="ml-3 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600">
+                            Logout
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
+        </nav>
+
+        <div class="py-10">
+            <main>
+                <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
         </div>
-    </nav>
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/proxies.js') }}"></script>  <!-- Add this line -->
+    <script>
+        // Flash messages auto-hide
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.style.display = 'none';
+                    }, 500);
+                });
+            }, 3000);
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/proxies.js') }}"></script>
 </body>
 </html>

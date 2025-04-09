@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import threading
 from flask_wtf.csrf import CSRFProtect
+from sqlalchemy.pool import QueuePool
 
 load_dotenv()
 
@@ -14,7 +15,7 @@ csrf = CSRFProtect()
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-init_lock = threading.Lock()
+init_lock = threading.Lock()    
 
 def create_app():
     app = Flask(__name__, 
@@ -32,6 +33,14 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{database_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Set SQLAlchemy connection pool settings
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 20,  # Increase from default (5)
+        'pool_timeout': 30,  # Seconds before timing out
+        'pool_recycle': 3600,  # Recycle connections after 1 hour
+        'max_overflow': 10  # Allow additional connections beyond pool_size
+    }
     
     # Initialize extensions
     csrf.init_app(app)

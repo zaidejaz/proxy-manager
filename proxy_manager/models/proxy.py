@@ -8,6 +8,7 @@ class Proxy(db.Model):
     port = db.Column(db.Integer, nullable=False)
     username = db.Column(db.String(50), nullable=False)
     password = db.Column(db.String(50), nullable=False)
+    proxy_type = db.Column(db.String(20), default='datacenter')
     last_used = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default=True)
     success_count = db.Column(db.Integer, default=0)
@@ -31,6 +32,7 @@ class Proxy(db.Model):
             'port': self.port,
             'username': self.username,
             'password': self.password,
+            'proxy_type': self.proxy_type,
             'is_active': self.is_active,
             'success_count': self.success_count,
             'failure_count': self.failure_count,
