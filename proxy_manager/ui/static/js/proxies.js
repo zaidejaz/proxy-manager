@@ -25,6 +25,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Add backup click handler for modal buttons in case Alpine.js isn't working properly
+    document.querySelectorAll('[data-modal-target]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const modalId = this.dataset.modalTarget;
+            const modalEvent = new CustomEvent('open-modal', { 
+                detail: { id: modalId } 
+            });
+            window.dispatchEvent(modalEvent);
+            console.log(`Modal open event triggered for ${modalId}`);
+        });
+    });
+
+    // Add a click handler for the "Add Proxy" button specifically
+    const addProxyButton = document.querySelector('button[type="button"][class*="bg-indigo-600"]');
+    if (addProxyButton) {
+        addProxyButton.addEventListener('click', function() {
+            const modalEvent = new CustomEvent('open-modal', { 
+                detail: { id: 'add-proxy-modal' } 
+            });
+            window.dispatchEvent(modalEvent);
+            console.log('Add proxy modal event triggered');
+        });
+    }
+
     // Elements
     const selectAllCheckbox = document.getElementById('selectAll');
     const deleteSelectedButton = document.getElementById('deleteSelected');

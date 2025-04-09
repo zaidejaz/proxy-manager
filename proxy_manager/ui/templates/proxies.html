@@ -28,7 +28,7 @@
         
         <!-- Action Buttons -->
         <div class="flex space-x-2">
-            <button @click="$dispatch('open-modal', { id: 'add-proxy-modal' })" type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-md text-sm font-medium shadow-sm">
+            <button @click="$dispatch('open-modal', { id: 'add-proxy-modal' })" type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-md text-sm font-medium shadow-sm" data-modal-target="add-proxy-modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                 </svg>
@@ -47,8 +47,8 @@
                 </button>
                 
                 <div x-show="open" @click.away="open = false" class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <a href="#" @click.prevent="$dispatch('open-modal', { id: 'import-datacenter-modal' }); open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Import Datacenter</a>
-                    <a href="#" @click.prevent="$dispatch('open-modal', { id: 'import-residential-modal' }); open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Import Residential</a>
+                    <a href="#" @click.prevent="$dispatch('open-modal', { id: 'import-datacenter-modal' }); open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-modal-target="import-datacenter-modal">Import Datacenter</a>
+                    <a href="#" @click.prevent="$dispatch('open-modal', { id: 'import-residential-modal' }); open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-modal-target="import-residential-modal">Import Residential</a>
                 </div>
             </div>
             
@@ -135,8 +135,7 @@
     <div 
         x-show="openModals['add-proxy-modal']" 
         class="relative z-10" 
-        x-cloak
-        style="display: none !important"
+        x-transition
     >
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
@@ -169,29 +168,29 @@
                                     <div class="space-y-4">
                                         <div>
                                             <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">IP Address</label>
-                                            <input type="text" name="ip" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
+                                            <input type="text" name="ip" class="block w-full rounded-md border-0 p-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">Port</label>
-                                            <input type="number" name="port" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
+                                            <input type="number" name="port" class="block w-full rounded-md border-0 p-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">Username</label>
-                                            <input type="text" name="username" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
+                                            <input type="text" name="username" class="block w-full rounded-md border-0 p-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">Password</label>
-                                            <input type="text" name="password" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
+                                            <input type="text" name="password" class="block w-full rounded-md border-0 p-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">Proxy Type</label>
-                                            <select name="proxy_type" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                            <select name="proxy_type" class="block w-full rounded-md border-0 p-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
                                                 <option value="datacenter">Datacenter</option>
                                                 <option value="residential">Residential</option>
                                             </select>
                                         </div>
                                         <div class="mt-6">
-                                            <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                            <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 p-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                                                 Add Proxy
                                             </button>
                                         </div>
@@ -209,8 +208,7 @@
     <div 
         x-show="openModals['import-datacenter-modal']" 
         class="relative z-10" 
-        x-cloak
-        style="display: none !important"
+        x-transition
     >
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
@@ -268,8 +266,7 @@
     <div 
         x-show="openModals['import-residential-modal']" 
         class="relative z-10" 
-        x-cloak
-        style="display: none !important"
+        x-transition
     >
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
