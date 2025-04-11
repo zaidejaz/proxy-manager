@@ -25,15 +25,94 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Listen for close-modal events and ensure modals are properly hidden
+    window.addEventListener('close-modal', function(event) {
+        if (event && event.detail && event.detail.id) {
+            const modalId = event.detail.id;
+            console.log(`Modal close event received for ${modalId}`);
+            
+            // Ensure Alpine.js modal state is reset
+            if (window.Alpine) {
+                try {
+                    const modalRoot = document.querySelector('[x-data="{ openModals: {} }"]');
+                    if (modalRoot) {
+                        const scope = window.Alpine.$data(modalRoot);
+                        if (scope && scope.openModals) {
+                            scope.openModals[modalId] = false;
+                            console.log(`Set ${modalId} to false in Alpine data`);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error updating Alpine.js modal state:', err);
+                }
+            }
+            
+            // Reset form if exists
+            try {
+                const modalElement = document.querySelector(`[x-show="openModals['${modalId}']"]`);
+                if (modalElement) {
+                    // Reset any forms in the modal
+                    const forms = modalElement.querySelectorAll('form');
+                    forms.forEach(form => {
+                        form.reset();
+                    });
+                    
+                    // Force hide the modal
+                    modalElement.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error handling modal close:', err);
+            }
+            
+            // Add a small delay to prevent any potential race conditions
+            setTimeout(() => {
+                // Double check the modal is closed in Alpine data
+                if (window.Alpine) {
+                    try {
+                        const modalRoot = document.querySelector('[x-data="{ openModals: {} }"]');
+                        if (modalRoot) {
+                            const scope = window.Alpine.$data(modalRoot);
+                            if (scope && scope.openModals && scope.openModals[modalId]) {
+                                scope.openModals[modalId] = false;
+                                console.log(`Force reset ${modalId} to false`);
+                            }
+                        }
+                    } catch (err) {
+                        // Ignore any errors in the delayed check
+                    }
+                }
+            }, 100);
+        }
+    });
+
     // Add backup click handler for modal buttons in case Alpine.js isn't working properly
     document.querySelectorAll('[data-modal-target]').forEach(button => {
         button.addEventListener('click', function(e) {
+            e.preventDefault();
             const modalId = this.dataset.modalTarget;
             const modalEvent = new CustomEvent('open-modal', { 
                 detail: { id: modalId } 
             });
             window.dispatchEvent(modalEvent);
             console.log(`Modal open event triggered for ${modalId}`);
+            
+            // As a last resort, try to show the modal directly
+            const modalElement = document.querySelector(`[x-show="openModals['${modalId}']"]`);
+            if (modalElement && window.Alpine) {
+                try {
+                    // Try to access Alpine's data and manipulate it
+                    const Alpine = window.Alpine;
+                    const scopeEl = Alpine.closestRoot(modalElement);
+                    if (scopeEl) {
+                        const scope = Alpine.$data(scopeEl);
+                        if (scope && scope.openModals) {
+                            scope.openModals[modalId] = true;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Alpine.js modal manipulation error:', err);
+                }
+            }
         });
     });
 

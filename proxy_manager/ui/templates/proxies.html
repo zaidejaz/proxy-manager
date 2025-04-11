@@ -130,14 +130,27 @@
 </div>
 
 <!-- Tailwind Modal Implementation -->
-<div x-data="{ openModals: {} }" @open-modal.window="openModals[$event.detail.id] = true" @close-modal.window="openModals[$event.detail.id] = false">
+<div x-data="{ 
+    openModals: {}, 
+    closeModal(id) { 
+        this.openModals[id] = false; 
+        $dispatch('close-modal', { id: id }); 
+    }, 
+    openModal(id) {
+        this.openModals[id] = true;
+    }
+}" 
+     @open-modal.window="openModal($event.detail.id)" 
+     @close-modal.window="closeModal($event.detail.id)">
     <!-- Add Proxy Modal -->
     <div 
         x-show="openModals['add-proxy-modal']" 
         class="relative z-10" 
         x-transition
+        style="display: none;"
+        x-cloak
     >
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click.self="closeModal('add-proxy-modal')"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div 
@@ -149,9 +162,10 @@
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
+                    style="display: none;"
                 >
                     <div class="absolute right-0 top-0 pr-4 pt-4">
-                        <button @click="$dispatch('close-modal', { id: 'add-proxy-modal' })" type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <button @click.stop.prevent="closeModal('add-proxy-modal')" type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                             <span class="sr-only">Close</span>
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -209,8 +223,10 @@
         x-show="openModals['import-datacenter-modal']" 
         class="relative z-10" 
         x-transition
+        style="display: none;"
+        x-cloak
     >
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click.self="closeModal('import-datacenter-modal')"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div 
@@ -222,9 +238,10 @@
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
+                    style="display: none;"
                 >
                     <div class="absolute right-0 top-0 pr-4 pt-4">
-                        <button @click="$dispatch('close-modal', { id: 'import-datacenter-modal' })" type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <button @click.stop.prevent="closeModal('import-datacenter-modal')" type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                             <span class="sr-only">Close</span>
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -267,8 +284,10 @@
         x-show="openModals['import-residential-modal']" 
         class="relative z-10" 
         x-transition
+        style="display: none;"
+        x-cloak
     >
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click.self="closeModal('import-residential-modal')"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div 
@@ -280,9 +299,10 @@
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
+                    style="display: none;"
                 >
                     <div class="absolute right-0 top-0 pr-4 pt-4">
-                        <button @click="$dispatch('close-modal', { id: 'import-residential-modal' })" type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <button @click.stop.prevent="closeModal('import-residential-modal')" type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                             <span class="sr-only">Close</span>
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
